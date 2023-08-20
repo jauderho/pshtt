@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 pshtt = {file = "."}
-cryptography = "*"
 
 [dev-packages]
 
