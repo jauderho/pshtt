@@ -321,10 +321,10 @@
         },
         "packaging": {
             "hashes": [
-                "sha256:994793af429502c4ea2ebf6bf664629d07c1a9fe974af92966e4b8d2df7edc61",
-                "sha256:a392980d2b6cffa644431898be54b0045151319d1e7ec34f0cfed48767dd334f"
+                "sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5",
+                "sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7"
             ],
-            "version": "==23.1"
+            "version": "==23.2"
         },
         "path": {
             "hashes": [
@@ -351,11 +351,11 @@
                 "update"
             ],
             "hashes": [
-                "sha256:1a60e79b6a84a5fdd12f4f2d9a2c985548a3f628daf2ac7c7f9af47b6492b403",
-                "sha256:a69728f6fea169815607e029b30ad28cedc242d7eb049a867ea7aea47aaac01e"
+                "sha256:81990427ec5dbdc8f2620c1775d5bc47ba54fe44b4e64797d06040d708d67171",
+                "sha256:a8ef3f5745196fd956bcf6f425b5000450896c616ee6e95130e147e2fae10ccc"
             ],
             "markers": "python_version >= '2.6'",
-            "version": "==0.10.0.20230927"
+            "version": "==0.10.0.20231002"
         },
         "pycparser": {
             "hashes": [
