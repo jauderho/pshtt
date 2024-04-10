@@ -417,11 +417,11 @@
         },
         "keras": {
             "hashes": [
-                "sha256:55558ea228dc38e7667874fd2e83eaf7faeb026e2e8615b36a8616830f7e303b",
-                "sha256:b5d45f0b5116b11db502da00bd501592364325d01724e6cb2032711e3e32677e"
+                "sha256:e3ff572c872ebb24d2ae62d4e12c3579ccd0019d0f0adaf3cb7dc610e77e84c1",
+                "sha256:ea021fe23012654c169c272b951bdda5ee28479f578f7d4addbff96cc97af347"
             ],
             "markers": "python_version >= '3.9'",
-            "version": "==3.1.1"
+            "version": "==3.2.0"
         },
         "libclang": {
             "hashes": [
@@ -705,11 +705,11 @@
         },
         "path": {
             "hashes": [
-                "sha256:02fd54171979ba062560c4f14fdda313e526d471690368809c39127aef4317cf",
-                "sha256:c874277418e79ad95356d53dba9f8e14973b50f99cbf3365c852e830c2e9af1a"
+                "sha256:8ee37703cbdc7cc83835ed4ecc6b638226fb2b43b7b45f26b620589981a109a5",
+                "sha256:dbaaa7efd4602fd6ba8d82890dc7823d69e5de740a6e842d9919b0faaf2b6a8e"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==16.12.1"
+            "version": "==16.14.0"
         },
         "pathvalidate": {
             "hashes": [
