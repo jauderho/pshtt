@@ -17,7 +17,7 @@ jobs:
       contents: read
       # crazy-max/ghaction-github-labeler needs this to manage repository labels
       issues: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Sync repository labels
