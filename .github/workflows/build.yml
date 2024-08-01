@@ -62,7 +62,9 @@ jobs:
       - id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ steps.setup-env.outputs.python-version }}
+          # python-version: ${{ steps.setup-env.outputs.python-version }}
+          # This project cannot currently support Python 3.11 or 3.12.
+          python-version: "3.10"
       # We need the Go version and Go cache location for the actions/cache step,
       # so the Go installation must happen before that.
       - id: setup-go
@@ -248,7 +250,9 @@ jobs:
       - id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ steps.setup-env.outputs.python-version }}
+          # python-version: ${{ steps.setup-env.outputs.python-version }}
+          # This project cannot currently support Python 3.11 or 3.12.
+          python-version: "3.10"
       - uses: actions/cache@v3
         env:
           BASE_CACHE_KEY: "${{ github.job }}-${{ runner.os }}-\
