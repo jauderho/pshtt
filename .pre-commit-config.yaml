@@ -126,7 +126,10 @@ repos:
   # Python hooks
   # Run bandit on the "tests" tree with a configuration
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.8
+    # bandit 1.7.6 dropped support for Python <3.8. Until this project
+    # and the build.yml workflow can migrate to Python 3.8 or newer we
+    # must continue to use an older version.
+    rev: 1.7.5
     hooks:
       - id: bandit
         name: bandit (tests tree)
@@ -137,7 +140,10 @@ repos:
           - importlib-metadata<5
   # Run bandit on everything except the "tests" tree
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.8
+    # bandit 1.7.6 dropped support for Python <3.8. Until this project
+    # and the build.yml workflow can migrate to Python 3.8 or newer we
+    # must continue to use an older version.
+    rev: 1.7.5
     hooks:
       - id: bandit
         name: bandit (everything else)
@@ -165,7 +171,10 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    # mypy 1.5.0 dropped support for Python <3.8. Until this project
+    # and the build.yml workflow can migrate to Python 3.8 or newer we
+    # must continue to use an older version.
+    rev: v1.4.1
     hooks:
       - id: mypy
         additional_dependencies:
