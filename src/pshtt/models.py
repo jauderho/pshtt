@@ -133,9 +133,9 @@ class Endpoint:
             obj["https_expired_cert"] = self.https_expired_cert
             obj["https_self_signed_cert"] = self.https_self_signed_cert
             obj["https_cert_chain_len"] = self.https_cert_chain_len
-            obj[
-                "https_missing_intermediate_cert"
-            ] = self.https_missing_intermediate_cert
+            obj["https_missing_intermediate_cert"] = (
+                self.https_missing_intermediate_cert
+            )
             obj["hsts"] = self.hsts
             obj["hsts_header"] = self.hsts_header
             obj["hsts_max_age"] = self.hsts_max_age

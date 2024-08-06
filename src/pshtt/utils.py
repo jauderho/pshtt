@@ -44,8 +44,8 @@ def write(content, destination, binary=False):
     if parent != "":
         mkdir_p(parent)
 
-    with open(destination, "bw") if binary else open(
-        destination, "w", encoding="utf-8"
+    with (
+        open(destination, "bw") if binary else open(destination, "w", encoding="utf-8")
     ) as f:
         f.write(content)
 
