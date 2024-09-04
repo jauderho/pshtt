@@ -13,7 +13,7 @@ permissions:
 jobs:
   diagnostics:
     name: Run diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       # Note that a duplicate of this step must be added at the top of
       # each job.
@@ -36,7 +36,7 @@ jobs:
       contents: read
       # crazy-max/ghaction-github-labeler needs this to manage repository labels
       issues: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - id: harden-runner
         name: Harden the runner

@@ -31,7 +31,7 @@ env:
 jobs:
   diagnostics:
     name: Run diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       # Note that a duplicate of this step must be added at the top of
       # each job.
@@ -49,7 +49,7 @@ jobs:
   lint:
     needs:
       - diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - id: harden-runner
         name: Harden the runner
@@ -177,7 +177,7 @@ jobs:
     name: test source - py${{ matrix.python-version }}
     needs:
       - diagnostics
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -234,7 +234,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         if: env.RUN_TMATE
   coveralls-finish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - diagnostics
       - test
@@ -285,7 +285,7 @@ jobs:
       - diagnostics
       - lint
       - test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -340,7 +340,7 @@ jobs:
     needs:
       - diagnostics
       - build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
