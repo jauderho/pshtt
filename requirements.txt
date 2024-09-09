@@ -51,7 +51,7 @@ referencing==0.35.1
 requests==2.32.3
 rich==13.8.0
 rpds-py==0.20.0
-setuptools==74.1.1
+setuptools==74.1.2
 six==1.16.0
 soupsieve==2.6
 sslyze==6.0.0
