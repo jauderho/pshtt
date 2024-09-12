@@ -35,7 +35,7 @@ optree==0.12.1
 packaging==24.1
 path==16.16.0
 pathvalidate==3.2.1
-protobuf==4.25.4
+protobuf==5.28.1
 -e .
 publicsuffixlist[update]==1.0.2.20240912
 pycparser==2.22
