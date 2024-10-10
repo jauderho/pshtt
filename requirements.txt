@@ -26,7 +26,7 @@ markdown-it-py==3.0.0
 markupsafe==3.0.1
 mbstrdecoder==1.1.3
 mdurl==0.1.2
-ml-dtypes==0.4.1
+ml-dtypes==0.5.0
 namex==0.0.8
 nassl==5.2.0
 numpy==1.26.4
