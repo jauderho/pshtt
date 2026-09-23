@@ -1,7 +1,9 @@
 """pshtt ("pushed") is a tool to test domains for HTTPS best practices.
 
 Usage:
-  pshtt (INPUT ...) [--output OUTFILE] [--sorted] [--json] [--markdown] [--debug] [--timeout TIMEOUT] [--user-agent AGENT] [--cache-third-parties DIR] [--ca-file PATH] [--pt-int-ca-file PATH]
+  pshtt (INPUT ...) [--output OUTFILE] [--sorted] [--json] [--markdown] [--debug]
+  [--timeout TIMEOUT] [--user-agent AGENT] [--cache-third-parties DIR]
+  [--ca-file PATH] [--pt-int-ca-file PATH]
   pshtt (-h | --help)
 
 Options:
@@ -13,9 +15,11 @@ Options:
   -d --debug                    Print debug output.
   -u --user-agent=AGENT         Override user agent.
   -t --timeout=TIMEOUT          Override timeout (in seconds).
-  -c --cache-third-parties=DIR  Cache third party data, and what directory to cache it in.
+  -c --cache-third-parties=DIR  Cache third party data, and what
+                                directory to cache it in.
   -f --ca-file=PATH             Specify custom CA bundle (PEM format)
-  -p --pt-int-ca-file=PATH       Specify public trust CA bundle with intermediates (PEM format)
+  -p --pt-int-ca-file=PATH      Specify public trust CA bundle with
+                                intermediates (PEM format)
 
 Notes:
   If the first INPUT ends with .csv, domains will be read from CSV.
@@ -25,6 +29,7 @@ Notes:
 # Standard Python Libraries
 import csv
 import logging
+import os
 import sys
 
 # Third-Party Libraries
@@ -39,7 +44,7 @@ from .utils import smart_open
 def to_csv(results, out_filename):
     """Output the provided results in CSV format to the provided filename."""
     utils.debug("Opening CSV file: %s", out_filename)
-    with smart_open(out_filename) as out_file:
+    with open(out_filename, "w", newline="") as out_file:
         writer = csv.writer(out_file)
 
         # Write out header
@@ -61,7 +66,7 @@ def to_json(results, out_filename):
     with smart_open(out_filename) as out_file:
         json_content = utils.json_for(results)
 
-        out_file.write(json_content + "\n")
+        out_file.write(json_content + os.linesep)
 
         if out_file is not sys.stdout:
             logging.warning("Wrote results to %s.", out_filename)
