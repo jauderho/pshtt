@@ -29,13 +29,9 @@ on:
 jobs:
   diagnostics:
     name: Run diagnostics
-<<<<<<< HEAD
     runs-on: ubuntu-24.04
-=======
     # This job does not need any permissions
     permissions: {}
-    runs-on: ubuntu-latest
->>>>>>> upstream/develop
     steps:
       # Note that a duplicate of this step must be added at the top of
       # each job.
@@ -71,16 +67,12 @@ jobs:
     name: Analyze
     needs:
       - diagnostics
-<<<<<<< HEAD
     runs-on: ubuntu-24.04
-=======
->>>>>>> upstream/develop
     permissions:
       # actions/checkout needs this to fetch code
       contents: read
       # required for all workflows
       security-events: write
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:

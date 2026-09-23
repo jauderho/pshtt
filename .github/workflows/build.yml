@@ -32,13 +32,9 @@ env:
 jobs:
   diagnostics:
     name: Run diagnostics
-<<<<<<< HEAD
     runs-on: ubuntu-24.04
-=======
     # This job does not need any permissions
     permissions: {}
-    runs-on: ubuntu-latest
->>>>>>> upstream/develop
     steps:
       # Note that a duplicate of this step must be added at the top of
       # each job.
@@ -73,14 +69,10 @@ jobs:
   lint:
     needs:
       - diagnostics
-<<<<<<< HEAD
     runs-on: ubuntu-24.04
-=======
     permissions:
       # actions/checkout needs this to fetch code
       contents: read
-    runs-on: ubuntu-latest
->>>>>>> upstream/develop
     steps:
       - name: Apply standard cisagov job preamble
         uses: cisagov/action-job-preamble@v1
@@ -218,14 +210,10 @@ jobs:
     name: test source - py${{ matrix.python-version }} - ${{ matrix.platform }}
     needs:
       - diagnostics
-<<<<<<< HEAD
     runs-on: ubuntu-24.04
-=======
     permissions:
       # actions/checkout needs this to fetch code
       contents: read
-    runs-on: ${{ matrix.platform }}
->>>>>>> upstream/develop
     strategy:
       fail-fast: false
       matrix:
@@ -316,14 +304,10 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         if: env.RUN_TMATE
   coveralls-finish:
-<<<<<<< HEAD
     runs-on: ubuntu-24.04
-=======
     permissions:
       # actions/checkout needs this to fetch code
       contents: read
-    runs-on: ubuntu-latest
->>>>>>> upstream/develop
     needs:
       - diagnostics
       - test-source
@@ -366,16 +350,10 @@ jobs:
     name: build wheel - py${{ matrix.python-version }}
     needs:
       - diagnostics
-<<<<<<< HEAD
-      - lint
-      - test
     runs-on: ubuntu-24.04
-=======
     permissions:
       # actions/checkout needs this to fetch code
       contents: read
-    runs-on: ${{ matrix.platform }}
->>>>>>> upstream/develop
     strategy:
       fail-fast: false
       matrix:
@@ -455,17 +433,12 @@ jobs:
     name: test built wheel - py${{ matrix.python-version }} - ${{ matrix.platform }}
     needs:
       - diagnostics
-<<<<<<< HEAD
-      - build
     runs-on: ubuntu-24.04
-=======
       - build-wheel
       - test-source
     permissions:
       # actions/checkout needs this to fetch code
       contents: read
-    runs-on: ${{ matrix.platform }}
->>>>>>> upstream/develop
     strategy:
       fail-fast: false
       matrix:
