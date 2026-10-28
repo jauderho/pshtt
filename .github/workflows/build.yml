@@ -217,28 +217,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: ubuntu-22.04
-            python-version: "3.7"
         # We test on all of the latest platforms available to use with GitHub-
         # hosted runners for public repositories.
         platform:
-          # The old version of sslyze that we use does not support
-          # OSX.
-          # - macos-latest
-          # The old version of sslyze that we use does not support ARM
-          # architectures.
-          # - ubuntu-24.04-arm
+          - macos-latest
+          - ubuntu-24.04-arm
           - ubuntu-latest
           - windows-latest
         python-version:
-          - "3.8"
-          - "3.9"
           - "3.10"
-          # - "3.11"
-          # - "3.12"
-          # - "3.13"
-          # - "3.14"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     steps:
       - name: Apply standard cisagov job preamble
         uses: cisagov/action-job-preamble@v1
@@ -357,19 +348,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: ubuntu-22.04
-            python-version: "3.7"
         platform:
           - ubuntu-latest
         python-version:
-          - "3.8"
-          - "3.9"
           - "3.10"
-          # - "3.11"
-          # - "3.12"
-          # - "3.13"
-          # - "3.14"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     steps:
       - name: Apply standard cisagov job preamble
         uses: cisagov/action-job-preamble@v1
@@ -442,28 +428,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: ubuntu-22.04
-            python-version: "3.7"
         # We test on all of the latest platforms available to use with GitHub-
         # hosted runners for public repositories.
         platform:
-          # The old version of sslyze that we use does not support
-          # OSX.
-          # - macos-latest
-          # The old version of sslyze that we use does not support ARM
-          # architectures.
-          # - ubuntu-24.04-arm
+          - macos-latest
+          - ubuntu-24.04-arm
           - ubuntu-latest
           - windows-latest
         python-version:
-          - "3.8"
-          - "3.9"
           - "3.10"
-          # - "3.11"
-          # - "3.12"
-          # - "3.13"
-          # - "3.14"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     steps:
       - name: Apply standard cisagov job preamble
         uses: cisagov/action-job-preamble@v1

@@ -4,6 +4,7 @@
 import base64
 import codecs
 import datetime
+import ipaddress
 import json
 import logging
 import os
@@ -12,21 +13,21 @@ import re
 from urllib import parse as urlparse
 
 # Third-Party Libraries
+from cryptography import x509
 import OpenSSL
 from publicsuffixlist.compat import PublicSuffixList  # type: ignore
 from publicsuffixlist.update import updatePSL  # type: ignore
 import requests
 from sslyze import (  # type: ignore
+    CertificateInfoExtraArgument,
+    ScanCommand,
+    ScanCommandAttemptStatusEnum,
+    ScanCommandsExtraArguments,
     Scanner,
-    ServerConnectivityTester,
-    ServerNetworkLocationViaDirectConnection,
+    ServerConnectivityStatusEnum,
+    ServerNetworkLocation,
     ServerScanRequest,
 )
-from sslyze.errors import ConnectionToServerFailed  # type: ignore
-from sslyze.plugins.certificate_info.implementation import (  # type: ignore
-    CertificateInfoExtraArguments,
-)
-from sslyze.plugins.scan_commands import ScanCommand  # type: ignore
 import urllib3
 
 from . import utils
@@ -669,6 +670,69 @@ def certificate_is_expired(cert, now_utc=None):
     return not_valid_after_utc <= now_utc
 
 
+def certificate_matches_hostname(cert, hostname):
+    """Determine whether a certificate's subjectAltName matches a hostname.
+
+    sslyze 6 no longer reports this itself, so it is checked here. Only the
+    subjectAltName extension is used, as modern clients ignore the subject's
+    common name. A wildcard only matches a whole left-most label.
+    """
+    try:
+        san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+    except x509.ExtensionNotFound:
+        return False
+
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        address = None
+    if address is not None:
+        return address in san.value.get_values_for_type(x509.IPAddress)
+
+    host_labels = hostname.lower().rstrip(".").split(".")
+    for name in san.value.get_values_for_type(x509.DNSName):
+        pattern_labels = name.lower().rstrip(".").split(".")
+        if len(pattern_labels) != len(host_labels):
+            continue
+        if pattern_labels[0] == "*":
+            # The wildcard stands in for exactly one label.
+            if pattern_labels[1:] == host_labels[1:] and len(pattern_labels) > 2:
+                return True
+        elif pattern_labels == host_labels:
+            return True
+    return False
+
+
+def scan_certificates(server_location, ca_file=None):
+    """Run the sslyze certificate scan and return the server scan result."""
+    if ca_file is None:
+        extra_arguments = ScanCommandsExtraArguments()
+    else:
+        extra_arguments = ScanCommandsExtraArguments(
+            certificate_info=CertificateInfoExtraArgument(custom_ca_file=Path(ca_file))
+        )
+    scan_request = ServerScanRequest(
+        server_location=server_location,
+        scan_commands={ScanCommand.CERTIFICATE_INFO},
+        scan_commands_extra_arguments=extra_arguments,
+    )
+    scanner = Scanner()
+    scanner.queue_scans([scan_request])
+    # Retrieve the only result from the generator
+    return next(iter(scanner.get_results()))
+
+
+def certificate_scan_result(server_scan_result):
+    """Return the certificate scan result, or raise if the scan did not finish."""
+    attempt = server_scan_result.scan_result.certificate_info
+    if attempt.status != ScanCommandAttemptStatusEnum.COMPLETED:
+        trace = "".join(attempt.error_trace.format()) if attempt.error_trace else ""
+        raise RuntimeError(
+            "sslyze certificate scan failed (%s): %s" % (attempt.error_reason, trace)
+        )
+    return attempt.result
+
+
 def https_check(endpoint):
     """Use sslyze to figure out the reason an endpoint failed to verify."""
     utils.debug("sslyzing %s...", endpoint.url)
@@ -685,38 +749,8 @@ def https_check(endpoint):
         if port is None:
             port = 443 if parsed_url.scheme == "https" else 80
 
-        server_location = (
-            ServerNetworkLocationViaDirectConnection.with_ip_address_lookup(
-                hostname=hostname, port=port
-            )
-        )
-        server_tester = ServerConnectivityTester()
-        server_info = server_tester.perform(server_location)
-        endpoint.live = True
-        ip = server_location.ip_address
-        if endpoint.ip is None:
-            endpoint.ip = ip
-        else:
-            if endpoint.ip != ip:
-                utils.debug(
-                    "%s: Endpoint IP is already %s, but requests IP is %s.",
-                    endpoint.url,
-                    endpoint.ip,
-                    ip,
-                )
-        if server_info.tls_probing_result.client_auth_requirement.name == "REQUIRED":
-            endpoint.https_client_auth_required = True
-            logging.warning("%s: Client Authentication REQUIRED", endpoint.url)
-    except ConnectionToServerFailed as err:
-        endpoint.live = False
-        endpoint.https_valid = False
-        logging.exception(
-            "%s: Error in sslyze server connectivity check when connecting to %s",
-            endpoint.url,
-            err.server_location.hostname,
-        )
-        utils.debug("%s: %s", endpoint.url, err)
-        return
+        # The IP address is looked up when the location is created.
+        server_location = ServerNetworkLocation(hostname=hostname, port=port)
     except Exception as err:
         endpoint.unknown_error = True
         logging.exception(
@@ -726,62 +760,68 @@ def https_check(endpoint):
         return
 
     try:
-        cert_plugin_result = None
-        scanner = Scanner()
-        command = ScanCommand.CERTIFICATE_INFO
-        if CA_FILE is not None:
-            command_extra_args = {
-                command: CertificateInfoExtraArguments(custom_ca_file=Path(CA_FILE))
-            }
-            scan_request = ServerScanRequest(
-                server_info=server_info,
-                scan_commands_extra_arguments=command_extra_args,
-                scan_commands=[command],
-            )
-        else:
-            scan_request = ServerScanRequest(
-                server_info=server_info, scan_commands=[command]
-            )
-        scanner.queue_scan(scan_request)
-        # Retrieve results from generator object
-        scan_result = list(scanner.get_results())[0]
-        cert_plugin_result = scan_result.scan_commands_results[
-            ScanCommand.CERTIFICATE_INFO
-        ]
+        server_scan_result = scan_certificates(server_location, CA_FILE)
     except Exception as err:
+        endpoint.unknown_error = True
+        logging.exception(
+            "%s: Unknown exception in sslyze server connectivity check.", endpoint.url
+        )
+        utils.debug("%s: %s", endpoint.url, err)
+        return
+
+    if server_scan_result.connectivity_status != ServerConnectivityStatusEnum.COMPLETED:
+        endpoint.live = False
+        endpoint.https_valid = False
+        error_trace = server_scan_result.connectivity_error_trace
+        logging.error(
+            "%s: Error in sslyze server connectivity check when connecting to %s",
+            endpoint.url,
+            server_location.hostname,
+        )
+        utils.debug(
+            "%s: %s",
+            endpoint.url,
+            "".join(error_trace.format()) if error_trace else "no error trace",
+        )
+        return
+
+    endpoint.live = True
+    ip = server_scan_result.server_location.ip_address
+    if endpoint.ip is None:
+        endpoint.ip = ip
+    elif endpoint.ip != ip:
+        utils.debug(
+            "%s: Endpoint IP is already %s, but requests IP is %s.",
+            endpoint.url,
+            endpoint.ip,
+            ip,
+        )
+    client_auth = server_scan_result.connectivity_result.client_auth_requirement
+    if client_auth.name == "REQUIRED":
+        endpoint.https_client_auth_required = True
+        logging.warning("%s: Client Authentication REQUIRED", endpoint.url)
+
+    try:
         try:
-            if "timed out" in str(err):
-                logging.exception(
-                    "%s: Retrying sslyze scanner certificate plugin.", endpoint.url
-                )
-                scanner.queue_scan(scan_request)
-                # Consume the generator object and retrieve the first result
-                scan_result = list(scanner.get_results())[0]
-                cert_plugin_result = scan_result.scan_commands_results[
-                    ScanCommand.CERTIFICATE_INFO
-                ]
-            else:
-                logging.exception(
-                    "%s: Unknown exception in sslyze scanner certificate plugin.",
-                    endpoint.url,
-                )
-                utils.debug("%s: %s", endpoint.url, err)
-                endpoint.unknown_error = True
-                # We could make this False, but there was an error so
-                # we don't know
-                endpoint.https_valid = None
-                return
-        except Exception:
+            cert_plugin_result = certificate_scan_result(server_scan_result)
+        except Exception as err:
+            if "timed out" not in str(err):
+                raise
             logging.exception(
-                "%s: Unknown exception in sslyze scanner certificate plugin.",
-                endpoint.url,
+                "%s: Retrying sslyze scanner certificate plugin.", endpoint.url
             )
-            utils.debug("%s: %s", endpoint.url, err)
-            endpoint.unknown_error = True
-            # We could make this False, but there was an error so we
-            # don't know
-            endpoint.https_valid = None
-            return
+            server_scan_result = scan_certificates(server_location, CA_FILE)
+            cert_plugin_result = certificate_scan_result(server_scan_result)
+    except Exception as err:
+        logging.exception(
+            "%s: Unknown exception in sslyze scanner certificate plugin.",
+            endpoint.url,
+        )
+        utils.debug("%s: %s", endpoint.url, err)
+        endpoint.unknown_error = True
+        # We could make this False, but there was an error so we don't know
+        endpoint.https_valid = None
+        return
 
     try:
         # Default endpoint assessments to False until proven True.
@@ -795,6 +835,9 @@ def https_check(endpoint):
         public_trust = True
         custom_trust = True
         public_not_trusted_names = []
+        cert_plugin_result_hostname = (
+            cert_plugin_result.hostname_used_for_server_name_indication
+        )
         for certificate_deployment in cert_plugin_result.certificate_deployments:
             validation_results = certificate_deployment.path_validation_results
             for result in validation_results:
@@ -809,7 +852,12 @@ def https_check(endpoint):
                         public_not_trusted_names.append(result.trust_store.name)
 
                 if STORE in result.trust_store.name:
-                    cert_chain = result.verified_certificate_chain
+                    # A failed validation has no verified chain, so fall back
+                    # to the chain the server sent.
+                    cert_chain = (
+                        result.verified_certificate_chain
+                        or certificate_deployment.received_certificate_chain
+                    )
                     leaf_cert = cert_chain[0]
 
                     # Check for leaf certificate expiration/self-signature.
@@ -838,14 +886,10 @@ def https_check(endpoint):
                         if cert.issuer == cert.subject or not cert.issuer:
                             endpoint.https_bad_chain = True
 
-                    # If leaf certificate subject does NOT match hostname, bad hostname
-                    # NOTE: Since sslyze 3.0.0, ever since JSON output for certinfo,
-                    # SAN(s) are checked as part of _certificate_matches_hostname which
-                    # called as part of leaf_certificate_subject_matches_hostname
-                    if (
-                        # flake8 complains that this line is too long, but I
-                        # don't see a way to split it up.
-                        not certificate_deployment.leaf_certificate_subject_matches_hostname  # noqa: B950
+                    # If the leaf certificate does NOT match the hostname, bad
+                    # hostname. sslyze 6 dropped its own check, so use ours.
+                    if not certificate_matches_hostname(
+                        leaf_cert, cert_plugin_result_hostname
                     ):
                         endpoint.https_bad_hostname = True
 
@@ -912,25 +956,9 @@ def https_check(endpoint):
                 # with manually added intermediate certificates
                 if PT_INT_CA_FILE is not None:
                     try:
-                        cert_plugin_result = None
-                        scanner = Scanner()
-                        command = ScanCommand.CERTIFICATE_INFO
-                        command_extra_args = {
-                            command: CertificateInfoExtraArguments(
-                                custom_ca_file=Path(PT_INT_CA_FILE)
-                            )
-                        }
-                        scan_request = ServerScanRequest(
-                            server_info=server_info,
-                            scan_commands_extra_arguments=command_extra_args,
-                            scan_commands=[command],
+                        cert_plugin_result = certificate_scan_result(
+                            scan_certificates(server_location, PT_INT_CA_FILE)
                         )
-                        scanner.queue_scan(scan_request)
-                        # Consume the generator object and retrieve the first result
-                        scan_result = list(scanner.get_results())[0]
-                        cert_plugin_result = scan_result.scan_commands_results[
-                            ScanCommand.CERTIFICATE_INFO
-                        ]
                         has_verified_cert_chain = True
                         for (
                             certificate_deployment
